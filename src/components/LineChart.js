@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import Chart from "react-apexcharts";
+import moment from "moment";
 
 class LineChart extends Component {
   constructor(props) {
@@ -11,32 +12,88 @@ class LineChart extends Component {
           id: "basic-bar"
         },
         xaxis: {
-          categories: [1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998]
+          categories: ["00:00", "00:09"]
         }
       },
       series: [
         {
           name: this.props.serie,
-          data: [30, 40, 45, 50, 49, 60, 70, 91]
+          data: ["0.1", "0.2"]
+        },
+        {
+          name: this.props.serie,
+          data: ["0.3", "0.5"]
+        },
+        {
+          name: this.props.serie,
+          data: ["1.1", "1.3"]
+        },
+        {
+          name: this.props.serie,
+          data: ["1.3", "1.5"]
         }
       ]
     };
   }
 
-  handleChartChange = event => {
-    const newSeries = {
-      name: "series-2",
-      data: [32, 42, 47, 53, 54, 62, 73, 86]
-    };
+  handleStartEvent = item => {
+    console.log("start event", item);
+  };
+
+  handleSpanEvent = item => {
+    console.log("span event", item);
+
     this.setState({
-      series: [{ ...this.state.series }, newSeries]
+      options: {
+        chart: this.state.options.chart,
+        xaxis: {
+          categories: ["00:00", this.getSecondsBtweenTwoDates(item)]
+        }
+      }
     });
-    // Chart.updateSeries(newSeries, true);
+  };
+
+  handleDataEvent = item => {
+    console.log("data event", item);
+  };
+
+  handleStopEvent = item => {
+    console.log("stop event", item);
+  };
+
+  getSecondsBtweenTwoDates = ({ begin, end }) => {
+    const now = moment(new Date(begin)); //todays date
+    const then = moment(new Date(end));
+    const duration = moment.duration(then.diff(now));
+    return moment(new Date(duration)).format("mm:ss");
+  };
+
+  handleChartChange = event => {
+    this.props.event.forEach(item => {
+      switch (item.type) {
+        case "start":
+          this.handleStartEvent(item);
+          break;
+        case "span":
+          this.handleSpanEvent(item);
+          break;
+        case "data":
+          this.handleDataEvent(item);
+          break;
+        case "stop":
+          this.handleStopEvent(item);
+          break;
+        default:
+      }
+    });
   };
 
   componentDidMount = () => {
+    // console.log(this.props.event);
     this.handleChartChange();
   };
+
+  componentWillReceiveProps = () => {};
 
   render() {
     return (
