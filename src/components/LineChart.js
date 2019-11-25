@@ -7,6 +7,12 @@ class LineChart extends Component {
     super(props);
 
     this.state = {
+      span: {
+        begin: 0,
+        end: 0
+      },
+      start: 0,
+      stop: 0,
       newSeries: [],
       options: {
         chart: {
@@ -24,45 +30,53 @@ class LineChart extends Component {
     };
   }
 
-  handleStartEvent = item => {
+  handleStartEvent = async item => {
+    await this.setState({
+      start: item.timestamp,
+      stop: 0
+    });
     console.log("start event", item);
   };
 
-  handleSpanEvent = item => {
+  handleSpanEvent = async item => {
     console.log("span event", item);
 
-    this.setState({
+    await this.setState({
+      span: {
+        begin: item.begin,
+        end: item.end
+      },
       options: {
         chart: this.state.options.chart,
         xaxis: {
           categories: ["00:00", this.getSecondsBtweenTwoDates(item)]
-        }
+        },
+        legend: {...this.state.options.legend}
       }
     });
+    console.log(this.state)
   };
 
   handleDataEvents = itens => {
-    console.log("datas events", itens);
     itens.map((item, index, arr) => {
-      console.log(index, arr);
-      const secondItem = itens.find(
-        i =>
-          i.os === item.os &&
-          i.browser === item.browser &&
-          i.timestamp !== item.timestamp
-      );
-      console.log(item, secondItem);
-      if (secondItem) {
-        itens.splice(index, 1, []);
-        return this.transformItensTochartLine(item, secondItem, arr);
-      } else {
-        return itens.splice(index, 1);
+      if (this.isTimeValid(item) && this.isTimeInsideSpanRange(item)) {
+        const secondItem = itens.find(
+          i =>
+            i.os === item.os &&
+            i.browser === item.browser &&
+            i.timestamp !== item.timestamp
+        );
+        if (secondItem) {
+          itens.splice(index, 1, []);
+          return this.transformItensTochartLine(item, secondItem, arr);
+        } else {
+          return itens.splice(index, 1, []);
+        }
       }
     });
     this.setState({
       series: this.state.newSeries
     });
-    console.log(this.state);
   };
 
   getResponseTimes = (item_res, second_item_res) => {
@@ -96,8 +110,15 @@ class LineChart extends Component {
   };
 
   handleStopEvent = item => {
+    this.setState({
+      stop: item.timestamp
+    });
     console.log("stop event", item);
   };
+
+  isTimeInsideSpanRange = item => {
+    return (item.timestamp >= this.state.span.begin && item.timestamp <= this.state.span.end) 
+  }
 
   getSecondsBtweenTwoDates = ({ begin, end }) => {
     const duration = moment.duration(
@@ -107,23 +128,28 @@ class LineChart extends Component {
   };
 
   separateEvents = events => {
-    const start = this.props.events.find(i => i.type === "start");
-    const stop = this.props.events.find(i => i.type === "stop");
-    const span = this.props.events.find(i => i.type === "span");
-    const datas = this.props.events.filter(i => i.type === "data");
+    const start = this.props.events.find(i => i.type.toLowerCase() === "start");
+    const stop = this.props.events.find(i => i.type.toLowerCase() === "stop");
+    const span = this.props.events.find(i => i.type.toLowerCase() === "span");
+    const datas = this.props.events.filter(i => i.type.toLowerCase() === "data");
     return { start, stop, span, datas };
   };
 
-  handleChartChange = events => {
+  handleChartChange = async events => {
     const { start, stop, span, datas } = this.separateEvents(events);
-    this.handleStartEvent(start);
-    this.handleSpanEvent(span);
-    this.handleStopEvent(stop);
-    this.handleDataEvents(datas);
+    if (start) await this.handleStartEvent(start);
+    if (span && this.isTimeValid(span)) await this.handleSpanEvent(span);
+    if (datas) this.handleDataEvents(datas);
+    if (stop) this.handleStopEvent(stop);
+    
   };
 
+  isTimeValid = (item) => {
+    if (this.state.stop === 0) return item.timestamp >= this.state.start;
+    return item.timestamp <= this.state.stop && item.timestamp >= this.state.start;
+  }
+
   componentDidMount = () => {
-    // console.log(this.props.event);
     this.handleChartChange();
   };
 
