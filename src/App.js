@@ -1,7 +1,6 @@
 import React from "react";
 import "./App.css";
 import LineChart from "./components/LineChart";
-import { Button, Toolbar, AppBar } from "@material-ui/core";
 
 function App() {
   const events = [
@@ -86,20 +85,6 @@ function App() {
   return (
     <div className="App">
       <LineChart serie={"series-1"} events={events} />
-      <AppBar
-        position="static"
-        style={{
-          background: "#C6C6C6",
-          height: "60px",
-          justifyContent: "center"
-        }}
-      >
-        <Toolbar variant="outlined">
-          <Button variant="contained" color="primary">
-            Generate Chart
-          </Button>
-        </Toolbar>
-      </AppBar>
     </div>
   );
 }

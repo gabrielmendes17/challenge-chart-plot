@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import Chart from "react-apexcharts";
 import moment from "moment";
+import { Button, Toolbar, AppBar } from "@material-ui/core";
 
 class LineChart extends Component {
   constructor(props) {
@@ -35,12 +36,9 @@ class LineChart extends Component {
       start: item.timestamp,
       stop: 0
     });
-    console.log("start event", item);
   };
 
   handleSpanEvent = async item => {
-    console.log("span event", item);
-
     await this.setState({
       span: {
         begin: item.begin,
@@ -51,10 +49,9 @@ class LineChart extends Component {
         xaxis: {
           categories: ["00:00", this.getSecondsBtweenTwoDates(item)]
         },
-        legend: {...this.state.options.legend}
+        legend: { ...this.state.options.legend }
       }
     });
-    console.log(this.state)
   };
 
   handleDataEvents = itens => {
@@ -113,12 +110,14 @@ class LineChart extends Component {
     this.setState({
       stop: item.timestamp
     });
-    console.log("stop event", item);
   };
 
   isTimeInsideSpanRange = item => {
-    return (item.timestamp >= this.state.span.begin && item.timestamp <= this.state.span.end) 
-  }
+    return (
+      item.timestamp >= this.state.span.begin &&
+      item.timestamp <= this.state.span.end
+    );
+  };
 
   getSecondsBtweenTwoDates = ({ begin, end }) => {
     const duration = moment.duration(
@@ -131,7 +130,9 @@ class LineChart extends Component {
     const start = this.props.events.find(i => i.type.toLowerCase() === "start");
     const stop = this.props.events.find(i => i.type.toLowerCase() === "stop");
     const span = this.props.events.find(i => i.type.toLowerCase() === "span");
-    const datas = this.props.events.filter(i => i.type.toLowerCase() === "data");
+    const datas = this.props.events.filter(
+      i => i.type.toLowerCase() === "data"
+    );
     return { start, stop, span, datas };
   };
 
@@ -141,29 +142,48 @@ class LineChart extends Component {
     if (span && this.isTimeValid(span)) await this.handleSpanEvent(span);
     if (datas) this.handleDataEvents(datas);
     if (stop) this.handleStopEvent(stop);
-    
   };
 
-  isTimeValid = (item) => {
+  isTimeValid = item => {
     if (this.state.stop === 0) return item.timestamp >= this.state.start;
-    return item.timestamp <= this.state.stop && item.timestamp >= this.state.start;
-  }
+    return (
+      item.timestamp <= this.state.stop && item.timestamp >= this.state.start
+    );
+  };
 
-  componentDidMount = () => {
+  generateChart = events => {
     this.handleChartChange();
   };
 
-  componentWillReceiveProps = () => {};
-
   render() {
     return (
-      <Chart
-        options={this.state.options}
-        series={this.state.series}
-        type="line"
-        height="450"
-        width="100%"
-      />
+      <>
+        <Chart
+          options={this.state.options}
+          series={this.state.series}
+          type="line"
+          height="450"
+          width="100%"
+        />
+        <AppBar
+          position="static"
+          style={{
+            background: "#C6C6C6",
+            height: "60px",
+            justifyContent: "center"
+          }}
+        >
+          <Toolbar>
+            <Button
+              variant="contained"
+              onClick={() => this.generateChart(this.props.events)}
+              color="primary"
+            >
+              Generate Chart
+            </Button>
+          </Toolbar>
+        </AppBar>
+      </>
     );
   }
 }
