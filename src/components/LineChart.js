@@ -7,32 +7,20 @@ class LineChart extends Component {
     super(props);
 
     this.state = {
+      newSeries: [],
       options: {
         chart: {
           id: "basic-bar"
         },
         xaxis: {
           categories: ["00:00", "00:09"]
+        },
+        legend: {
+          position: "right",
+          fontFamily: "Helvetica, Arial, sans-serif"
         }
       },
-      series: [
-        {
-          name: this.props.serie,
-          data: ["0.1", "0.2"]
-        }
-        // {
-        //   name: this.props.serie,
-        //   data: ["0.3", "0.5"]
-        // },
-        // {
-        //   name: this.props.serie,
-        //   data: ["1.1", "1.3"]
-        // },
-        // {
-        //   name: this.props.serie,
-        //   data: ["1.3", "1.5"]
-        // }
-      ]
+      series: []
     };
   }
 
@@ -65,34 +53,46 @@ class LineChart extends Component {
       );
       console.log(item, secondItem);
       if (secondItem) {
-        itens.splice(index, 1);
-        return this.transformItensTochartLine(item, secondItem);
+        itens.splice(index, 1, []);
+        return this.transformItensTochartLine(item, secondItem, arr);
       } else {
         return itens.splice(index, 1);
       }
     });
+    this.setState({
+      series: this.state.newSeries
+    });
+    console.log(this.state);
   };
 
   getResponseTimes = (item_res, second_item_res) => {
     return item_res > second_item_res
       ? { item_res, second_item_res }
-      : { item_res, second_item_res };
+      : { second_item_res, item_res };
   };
 
-  transformItensTochartLine = (item, secondItem) => {
-    let { item_res, second_item_res } = this.getResponseTimes(
-      item.min_response_time,
-      secondItem.min_response_time
+  transformItensTochartLine = (item, secondItem, arr) => {
+    const item_min_res = Object.values(
+      this.getResponseTimes(
+        item.min_response_time,
+        secondItem.min_response_time
+      )
+    );
+    const item_max_res = Object.values(
+      this.getResponseTimes(
+        item.max_response_time,
+        secondItem.max_response_time
+      )
     );
     const newSerieMin = {
       name: `${item.os} ${item.browser} Min Response Time`,
-      data: [item_res, second_item_res]
+      data: [item_min_res[1], item_min_res[0]]
     };
-    console.log(this.state);
-    this.setState({
-      series: [...this.state.series, newSerieMin]
-    });
-    console.log(this.state);
+    const newSerieMax = {
+      name: `${item.os} ${item.browser} Max Response Time`,
+      data: [item_max_res[1], item_max_res[0]]
+    };
+    this.state.newSeries.push(newSerieMin, newSerieMax);
   };
 
   handleStopEvent = item => {
